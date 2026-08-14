@@ -90,7 +90,7 @@ dev = [
 link-mode = "copy"
 
 [tool.hatch.version]
-path = "grpc_server_kit/__version__.py"
+path = "grpc_server_kit/version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["grpc_server_kit"]
@@ -170,7 +170,7 @@ source = ["grpc_server_kit"]
 omit = [
     "tests/*",
     "*/test_*.py",
-    "*/__version__.py",
+    "*/version.py",
 ]
 
 [tool.coverage.report]
