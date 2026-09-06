@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/bedrock-python/grpc-server-kit/compare/grpc-server-kit-v0.1.0...grpc-server-kit-v0.1.1) (2026-09-06)
+
+
+### Documentation
+
+* org-wide security policy and code of conduct ([#11](https://github.com/bedrock-python/grpc-server-kit/issues/11)) ([1102f21](https://github.com/bedrock-python/grpc-server-kit/commit/1102f213559deb8fe7c1ea22df652a26bce8a89a))
+
 ## 0.1.0 (2026-08-11)
 
 Initial release of grpc-server-kit.
