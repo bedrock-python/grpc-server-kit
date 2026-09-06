@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/bedrock-python/grpc-server-kit/compare/grpc-server-kit-v0.1.0...grpc-server-kit-v0.1.1) (2026-09-06)
+
+
+### Bug Fixes
+
+* missing exports, context skip_methods, and compression "none" ([#17](https://github.com/bedrock-python/grpc-server-kit/issues/17)) ([9c70e9d](https://github.com/bedrock-python/grpc-server-kit/commit/9c70e9db467f8fc3c25c2426c98869b22a3ce0aa))
+
 ## 0.1.0 (2026-08-11)
 
 Initial release of grpc-server-kit.
