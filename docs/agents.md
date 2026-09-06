@@ -234,10 +234,10 @@ The six shipped interceptors, in canonical order (outermost first):
 | # | Constructor | Notes |
 |---|---|---|
 | 1 | `AsyncMetricsInterceptor(metrics=None, service_name="unknown", *, skip_methods=SKIPPED_HEALTH_METHODS)` | `metrics=None` no-ops; empty `service_name` raises `ValueError` |
-| 2 | `AsyncContextInterceptor(header_configs, bind_method_name=True, bind_structlog=True, method_key="grpc_method")` | The only one with **no** `skip_methods` argument |
+| 2 | `AsyncContextInterceptor(header_configs, bind_method_name=True, bind_structlog=True, method_key="grpc_method", *, skip_methods=())` | `skip_methods` defaults to empty: it binds values the handler itself may read |
 | 3 | `AsyncRequestLoggerInterceptor(*, log_peer=False, log_request_on_error=False, skip_methods=SKIPPED_HEALTH_METHODS)` | Peer is logged as a protocol name only, never an IP |
 | 4 | `AsyncTracingInterceptor(service_name, tracer=None, *, skip_methods=SKIPPED_HEALTH_METHODS)` | `service_name` is required; `tracer=None` no-ops |
-| 5 | `AsyncExceptionHandlerInterceptor(error_status_map=None, *, detail_factory=None, merge_defaults=True)` | Your map wins over the defaults it is merged into |
+| 5 | `AsyncExceptionHandlerInterceptor(error_status_map=None, *, detail_factory=None, merge_defaults=True)` | Your map wins over the defaults it is merged into; no `skip_methods` — every RPC gets its exceptions mapped |
 | 6 | `AsyncSentryInterceptor(sentry=None, *, capture_filter=None, skip_methods=SKIPPED_HEALTH_METHODS)` | Must sit **after** the exception handler in the list |
 
 `AsyncServerInterceptor(*, skip_methods=())` is the base; `skip_methods` holds full RPC
