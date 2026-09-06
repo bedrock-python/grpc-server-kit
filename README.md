@@ -19,6 +19,16 @@ Dishka DI, and typed pydantic settings.
 The core depends only on `grpcio`. Every integration is an opt-in extra, so you
 install exactly what you use.
 
+> [!TIP]
+> **Building this with an AI assistant?** Hand it
+> **[one page](https://bedrock-python.github.io/grpc-server-kit/agents/)** instead of
+> the whole site: the complete API surface, the ordering rules that break a server when
+> they are broken (build-then-configure, outermost-first interceptors, Sentry inside the
+> exception handler), the mistakes models actually make with `grpc.aio`, and a map of
+> which page to fetch for the rest. Every docs page is also served as raw Markdown at its
+> own URL, and a **Copy page** button at the top of each one hands it straight to a chat
+> window.
+
 ## Installation
 
 ```bash
@@ -220,6 +230,10 @@ Runnable, self-contained scripts in [`examples/`](examples/) — each prints wha
 ## Documentation
 
 Full documentation at [bedrock-python.github.io/grpc-server-kit](https://bedrock-python.github.io/grpc-server-kit/).
+
+- [For AI agents](https://bedrock-python.github.io/grpc-server-kit/agents/) — the whole
+  API surface, the rules that break a server when broken and a map of the rest, on one
+  page to hand to a coding assistant
 
 ## License
 
