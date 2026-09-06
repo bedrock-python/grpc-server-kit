@@ -417,8 +417,9 @@ The kit's defaults live in `grpc_server_kit.constants` as `DEFAULT_*` names, alo
     `slots=True`, so every field is a keyword and unknown ones are a `TypeError`.
 19. **`build_grpc_options` rejects bad values loudly.** A negative option or an
     unsupported `compression_algorithm` raises `ValueError`; `None` means "use the kit
-    default". Note the asymmetry: `COMPRESSION_ALGORITHMS` accepts `"none"`, but
-    `BaseGrpcServerSettings` types the field as `Literal["deflate", "gzip"] | None`.
+    default". The algorithm name is matched case-insensitively against
+    `COMPRESSION_ALGORITHMS`, and `"none"` is one of them — gRPC's explicit
+    no-compression algorithm, which is not the same thing as leaving the field `None`.
 
 ## Common mistakes
 
