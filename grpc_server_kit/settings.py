@@ -30,7 +30,10 @@ from grpc_server_kit.constants import (
     DEFAULT_PORT,
 )
 
-GrpcCompressionAlgorithm = Literal["deflate", "gzip"]
+# Mirrors the keys of ``grpc_server_kit.options.COMPRESSION_ALGORITHMS``:
+# "none" is gRPC's explicit no-compression algorithm, not the absence of a
+# setting (that is ``None``).
+GrpcCompressionAlgorithm = Literal["none", "deflate", "gzip"]
 
 
 class BaseHealthSettings(BaseModel):
@@ -106,7 +109,7 @@ class BaseGrpcServerSettings(BaseModel):
     # Compression
     compression_algorithm: GrpcCompressionAlgorithm | None = Field(
         default=None,
-        description="Default compression: deflate or gzip (None = no compression)",
+        description="Default compression: none, deflate or gzip (None = leave the gRPC default alone)",
     )
 
     # Flow control settings

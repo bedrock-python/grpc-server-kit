@@ -66,8 +66,11 @@ app.enable_reflection(["my.pkg.MyService"])   # [reflection] extra
 app.enable_channelz()                          # [channelz] extra
 ```
 
-When health is enabled, the health service name is advertised via reflection
-automatically.
+`enable_reflection` needs the names: `grpc.health.v1.Health` is appended to
+the list you pass whenever health is also enabled, so it is reflected without
+you spelling it out — but health never turns reflection on by itself, and
+`settings.enable_reflection = True` with no `enable_reflection([...])` call
+fails the build with `ValueError`.
 
 ## Embedding and tests
 

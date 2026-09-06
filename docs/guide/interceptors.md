@@ -64,6 +64,13 @@ Health `Check`/`Watch` methods, so routine liveness/readiness polling
 doesn't inflate request logs, latency histograms, or trace volume — see
 [Observability](observability.md#health-checks-are-excluded-by-default).
 
+`AsyncContextInterceptor` takes the same kwarg but defaults it to empty: it
+binds context variables the handler itself may read, so nothing is skipped
+unless you ask. Pass `skip_methods=SKIPPED_HEALTH_METHODS` to keep health
+probes out of it — worth doing when a `HeaderConfig` is `required=True`, since
+a kubelet probe carries none of your headers and would be aborted with
+`INVALID_ARGUMENT`.
+
 ## The per-method handler cache
 
 `intercept_service` runs on every incoming RPC, not once at startup, so

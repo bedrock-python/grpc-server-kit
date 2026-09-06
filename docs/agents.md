@@ -153,17 +153,15 @@ await run_async_grpc_server(server, address=f"{config.host}:{port}")
 | `bind_server_port(server, settings)` | Binds, TLS-aware; returns the **actual** port |
 | `setup_signal_handlers(callback)` | Installs SIGINT/SIGTERM on a process-global manager |
 | `GrpcSettingsProtocol`, `GrpcSslSettingsProtocol`, `GrpcServerSettingsProtocol`, `GrpcServerProtocol`, `GrpcAsyncServerProtocol` | The structural seams |
+| `GrpcServiceName` | `NewType("GrpcServiceName", str)` — the DI key for the fully-qualified service name |
 | `__version__` | The version string |
-
-`grpc_server_kit.protocols` also defines `GrpcServiceName`, a `NewType("GrpcServiceName", str)`
-used as the DI key for the fully-qualified service name. It is not re-exported at the
-package root — import it from `grpc_server_kit.protocols`.
 
 ### `grpc_server_kit.aio`
 
 Everything above plus `AsyncGrpcServerBuilder`, `AsyncServer`,
 `create_async_grpc_server`, `create_base_async_grpc_server`, `ServerLifecycleManager`,
-`run_async_grpc_server` and `reset_signal_handlers`. The subpackages
+`run_async_grpc_server`, `SignalManager`, `reset_signal_handlers` and
+`reset_signal_handlers_async`. The subpackages
 (`aio.interceptors`, `aio.health`, `aio.observability`, `aio.dishka`) are **not**
 re-exported here — import them by their own module path.
 
@@ -206,7 +204,7 @@ of `0` or `None` disables caching.
 | `await manager.stop()` | Drains, then restores the previous signal handlers |
 | `manager.request_shutdown(reason="requested")` | From the event loop; from a thread use `loop.call_soon_threadsafe` |
 | `await run_async_grpc_server(server, *, address, grace_period=5.0, setup_signals=True, signal_manager=None)` | The one-call form |
-| `SignalManager` (`grpc_server_kit.signals`) | `setup(callback)`, `reset()`, `await reset_async()` |
+| `SignalManager` (`grpc_server_kit.signals`, re-exported from `grpc_server_kit.aio`) | `setup(callback)`, `reset()`, `await reset_async()`; the module-level `setup_signal_handlers` / `reset_signal_handlers` / `await reset_signal_handlers_async()` drive one process-global manager |
 
 ### Interceptors
 
@@ -234,10 +232,10 @@ The six shipped interceptors, in canonical order (outermost first):
 | # | Constructor | Notes |
 |---|---|---|
 | 1 | `AsyncMetricsInterceptor(metrics=None, service_name="unknown", *, skip_methods=SKIPPED_HEALTH_METHODS)` | `metrics=None` no-ops; empty `service_name` raises `ValueError` |
-| 2 | `AsyncContextInterceptor(header_configs, bind_method_name=True, bind_structlog=True, method_key="grpc_method")` | The only one with **no** `skip_methods` argument |
+| 2 | `AsyncContextInterceptor(header_configs, bind_method_name=True, bind_structlog=True, method_key="grpc_method", *, skip_methods=())` | `skip_methods` defaults to empty: it binds values the handler itself may read |
 | 3 | `AsyncRequestLoggerInterceptor(*, log_peer=False, log_request_on_error=False, skip_methods=SKIPPED_HEALTH_METHODS)` | Peer is logged as a protocol name only, never an IP |
 | 4 | `AsyncTracingInterceptor(service_name, tracer=None, *, skip_methods=SKIPPED_HEALTH_METHODS)` | `service_name` is required; `tracer=None` no-ops |
-| 5 | `AsyncExceptionHandlerInterceptor(error_status_map=None, *, detail_factory=None, merge_defaults=True)` | Your map wins over the defaults it is merged into |
+| 5 | `AsyncExceptionHandlerInterceptor(error_status_map=None, *, detail_factory=None, merge_defaults=True)` | Your map wins over the defaults it is merged into; no `skip_methods` — every RPC gets its exceptions mapped |
 | 6 | `AsyncSentryInterceptor(sentry=None, *, capture_filter=None, skip_methods=SKIPPED_HEALTH_METHODS)` | Must sit **after** the exception handler in the list |
 
 `AsyncServerInterceptor(*, skip_methods=())` is the base; `skip_methods` holds full RPC
@@ -417,8 +415,9 @@ The kit's defaults live in `grpc_server_kit.constants` as `DEFAULT_*` names, alo
     `slots=True`, so every field is a keyword and unknown ones are a `TypeError`.
 19. **`build_grpc_options` rejects bad values loudly.** A negative option or an
     unsupported `compression_algorithm` raises `ValueError`; `None` means "use the kit
-    default". Note the asymmetry: `COMPRESSION_ALGORITHMS` accepts `"none"`, but
-    `BaseGrpcServerSettings` types the field as `Literal["deflate", "gzip"] | None`.
+    default". The algorithm name is matched case-insensitively against
+    `COMPRESSION_ALGORITHMS`, and `"none"` is one of them — gRPC's explicit
+    no-compression algorithm, which is not the same thing as leaving the field `None`.
 
 ## Common mistakes
 

@@ -9,10 +9,13 @@ import grpc
 import pytest
 
 from grpc_server_kit.aio.interceptors.context import AsyncContextInterceptor, HeaderConfig
+from grpc_server_kit.interceptors.constants import SKIPPED_HEALTH_METHODS
 
 from .conftest import RESPONSE, MakeContext, OkMethod, RunUnary
 
 pytestmark = pytest.mark.unit
+
+HEALTH_CHECK_METHOD = "/grpc.health.v1.Health/Check"
 
 
 @pytest.mark.parametrize(
@@ -177,6 +180,45 @@ async def test__context_interceptor__remover_raises__request_still_succeeds(
     # Act
     # The request still completes even though the remover raised.
     result = await run_unary(interceptor, ok_method, MagicMock(), make_context(metadata={"x-req": "r1"}))
+
+    # Assert
+    assert result == RESPONSE
+
+
+async def test__context_interceptor__skipped_method__does_not_bind_context(
+    make_context: MakeContext,
+    ok_method: OkMethod,
+    run_unary: RunUnary,
+) -> None:
+    # Arrange
+    bound: list[str] = []
+    config = HeaderConfig(header_name="x-req", context_var_name="req", context_setter=bound.append)
+    interceptor = AsyncContextInterceptor([config], bind_structlog=False, skip_methods=SKIPPED_HEALTH_METHODS)
+
+    # Act
+    await run_unary(
+        interceptor,
+        ok_method,
+        MagicMock(),
+        make_context(metadata={"x-req": "r1"}),
+        HEALTH_CHECK_METHOD,
+    )
+
+    # Assert
+    assert bound == []
+
+
+async def test__context_interceptor__skipped_method_missing_required_header__does_not_abort(
+    make_context: MakeContext,
+    ok_method: OkMethod,
+    run_unary: RunUnary,
+) -> None:
+    # Arrange
+    config = HeaderConfig(header_name="x-req", context_var_name="req", required=True)
+    interceptor = AsyncContextInterceptor([config], bind_structlog=False, skip_methods=SKIPPED_HEALTH_METHODS)
+
+    # Act
+    result = await run_unary(interceptor, ok_method, MagicMock(), make_context(), HEALTH_CHECK_METHOD)
 
     # Assert
     assert result == RESPONSE

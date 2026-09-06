@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from grpc_server_kit.settings import BaseGrpcServerSettings, BaseHealthSettings
+from grpc_server_kit.settings import BaseGrpcServerSettings, BaseHealthSettings, GrpcCompressionAlgorithm
 
 pytestmark = pytest.mark.unit
 
@@ -85,6 +85,17 @@ def test__base_grpc_server_settings__port_zero__accepted_as_ephemeral() -> None:
 
     # Assert
     assert settings.port == 0
+
+
+@pytest.mark.parametrize("algorithm", ["none", "deflate", "gzip"])
+def test__base_grpc_server_settings__supported_compression_algorithm__accepted(
+    algorithm: GrpcCompressionAlgorithm,
+) -> None:
+    # Act
+    settings = BaseGrpcServerSettings(compression_algorithm=algorithm)
+
+    # Assert
+    assert settings.compression_algorithm == algorithm
 
 
 def test__base_grpc_server_settings__invalid_compression_algorithm__raises() -> None:

@@ -12,7 +12,7 @@ from .base import AsyncServerInterceptor, RpcCall
 from .metadata import get_metadata_dict
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable
+    from collections.abc import AsyncIterator, Callable, Collection
 
     import structlog
 else:
@@ -62,6 +62,8 @@ class AsyncContextInterceptor(AsyncServerInterceptor):
         bind_method_name: bool = True,
         bind_structlog: bool = True,
         method_key: str = "grpc_method",
+        *,
+        skip_methods: Collection[str] = (),
     ) -> None:
         """Initialize interceptor with header configurations.
 
@@ -71,8 +73,13 @@ class AsyncContextInterceptor(AsyncServerInterceptor):
             bind_structlog: Whether to bind extracted variables to structlog context
                 (no-op if structlog is not installed).
             method_key: Key for the gRPC method name in context.
+            skip_methods: Full RPC method names to leave unwrapped. Empty by
+                default — unlike the observability interceptors, this one binds
+                values the handler itself may read, so nothing is skipped
+                unless you say so. Pass ``SKIPPED_HEALTH_METHODS`` to keep
+                health probes out (required headers included).
         """
-        super().__init__()
+        super().__init__(skip_methods=skip_methods)
         self._header_configs = header_configs
         self._bind_method_name = bind_method_name
         self._bind_structlog = bind_structlog
