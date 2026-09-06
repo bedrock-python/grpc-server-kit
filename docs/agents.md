@@ -153,17 +153,15 @@ await run_async_grpc_server(server, address=f"{config.host}:{port}")
 | `bind_server_port(server, settings)` | Binds, TLS-aware; returns the **actual** port |
 | `setup_signal_handlers(callback)` | Installs SIGINT/SIGTERM on a process-global manager |
 | `GrpcSettingsProtocol`, `GrpcSslSettingsProtocol`, `GrpcServerSettingsProtocol`, `GrpcServerProtocol`, `GrpcAsyncServerProtocol` | The structural seams |
+| `GrpcServiceName` | `NewType("GrpcServiceName", str)` — the DI key for the fully-qualified service name |
 | `__version__` | The version string |
-
-`grpc_server_kit.protocols` also defines `GrpcServiceName`, a `NewType("GrpcServiceName", str)`
-used as the DI key for the fully-qualified service name. It is not re-exported at the
-package root — import it from `grpc_server_kit.protocols`.
 
 ### `grpc_server_kit.aio`
 
 Everything above plus `AsyncGrpcServerBuilder`, `AsyncServer`,
 `create_async_grpc_server`, `create_base_async_grpc_server`, `ServerLifecycleManager`,
-`run_async_grpc_server` and `reset_signal_handlers`. The subpackages
+`run_async_grpc_server`, `SignalManager`, `reset_signal_handlers` and
+`reset_signal_handlers_async`. The subpackages
 (`aio.interceptors`, `aio.health`, `aio.observability`, `aio.dishka`) are **not**
 re-exported here — import them by their own module path.
 
@@ -206,7 +204,7 @@ of `0` or `None` disables caching.
 | `await manager.stop()` | Drains, then restores the previous signal handlers |
 | `manager.request_shutdown(reason="requested")` | From the event loop; from a thread use `loop.call_soon_threadsafe` |
 | `await run_async_grpc_server(server, *, address, grace_period=5.0, setup_signals=True, signal_manager=None)` | The one-call form |
-| `SignalManager` (`grpc_server_kit.signals`) | `setup(callback)`, `reset()`, `await reset_async()` |
+| `SignalManager` (`grpc_server_kit.signals`, re-exported from `grpc_server_kit.aio`) | `setup(callback)`, `reset()`, `await reset_async()`; the module-level `setup_signal_handlers` / `reset_signal_handlers` / `await reset_signal_handlers_async()` drive one process-global manager |
 
 ### Interceptors
 

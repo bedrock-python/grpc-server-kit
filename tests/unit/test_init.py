@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from types import ModuleType
+
 import pytest
 
 import grpc_server_kit
@@ -10,7 +12,9 @@ from grpc_server_kit import (
     bind_server_port,
     build_grpc_options,
     load_server_credentials,
+    protocols,
     setup_signal_handlers,
+    signals,
 )
 
 pytestmark = pytest.mark.unit
@@ -49,3 +53,26 @@ def test__grpc_server_kit__key_entrypoints__are_callable() -> None:
     assert all(callable(entrypoint) for entrypoint in entrypoints)
     # The async builder is an aio-level export, not a top-level one.
     assert callable(aio.AsyncGrpcServerBuilder)
+
+
+@pytest.mark.parametrize("module", [grpc_server_kit, aio], ids=["root", "aio"])
+def test__public_modules__grpc_service_name__is_re_exported(module: ModuleType) -> None:
+    # Act
+    exported = getattr(module, "GrpcServiceName", None)
+
+    # Assert
+    assert exported is protocols.GrpcServiceName
+    assert "GrpcServiceName" in module.__all__
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["SignalManager", "reset_signal_handlers", "reset_signal_handlers_async", "setup_signal_handlers"],
+)
+def test__grpc_server_kit_aio__signal_api__is_re_exported(name: str) -> None:
+    # Act
+    exported = getattr(aio, name, None)
+
+    # Assert
+    assert exported is getattr(signals, name)
+    assert name in aio.__all__

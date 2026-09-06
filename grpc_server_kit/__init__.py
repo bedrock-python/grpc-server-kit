@@ -10,6 +10,7 @@ from .protocols import (
     GrpcAsyncServerProtocol,
     GrpcServerProtocol,
     GrpcServerSettingsProtocol,
+    GrpcServiceName,
     GrpcSettingsProtocol,
     GrpcSslSettingsProtocol,
 )
@@ -23,6 +24,7 @@ __all__ = [
     "GrpcServerConfig",
     "GrpcServerProtocol",
     "GrpcServerSettingsProtocol",
+    "GrpcServiceName",
     "GrpcSettingsProtocol",
     "GrpcSslSettingsProtocol",
     "__version__",
