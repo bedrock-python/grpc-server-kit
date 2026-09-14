@@ -333,7 +333,8 @@ defaults: `host="[::]"`, `port=50051`, `ssl_enabled=False`, `ssl_cert_file`,
 `initial_connection_window_size=65535`, `enable_reflection=False`,
 `enable_channelz=False`, `grace_period=5.0`, `metrics_enabled=False`.
 `BaseGrpcServerSettings` additionally nests `health: BaseHealthSettings`
-(`cache_ttl=5.0`, `check_timeout=10.0`); `GrpcServerConfig` has no `health` block.
+(`cache_ttl=5.0`, `check_timeout=10.0`) and carries `allow_ephemeral_port=False`;
+`GrpcServerConfig` has neither.
 The kit's defaults live in `grpc_server_kit.constants` as `DEFAULT_*` names, alongside
 `HEALTH_SERVICE_NAME = "grpc.health.v1.Health"`.
 
@@ -377,7 +378,10 @@ The kit's defaults live in `grpc_server_kit.constants` as `DEFAULT_*` names, alo
    `load_server_credentials` directly and accept the warning instead.
 9. **`port=0` binds an ephemeral port, and only `bind_server_port` knows which.** Read it
    back from `app.bound_port` (or the return value of `bind_server_port`); before the
-   build it raises `RuntimeError`, and `settings.port` still says `0`.
+   build it raises `RuntimeError`, and `settings.port` still says `0`. `GrpcServerConfig`
+   accepts `0`; `BaseGrpcServerSettings` rejects it unless `allow_ephemeral_port=True`,
+   because it is the env-facing shape and `GRPC__PORT=0` in a Deployment is a silent
+   outage (the process is up and healthy, and not on the port the `Service` targets).
 10. **Optional subpackages import their extra at module level.** `import
     grpc_server_kit.aio.health` raises `ImportError` without `[health]`, and the same
     holds for `grpc_server_kit.settings` (`[settings]`) and both dishka packages

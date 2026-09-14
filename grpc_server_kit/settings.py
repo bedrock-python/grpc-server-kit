@@ -62,6 +62,10 @@ class BaseGrpcServerSettings(BaseModel):
     # Basic
     host: str = Field(default=DEFAULT_HOST, min_length=1, description="gRPC server host")
     port: int = Field(default=DEFAULT_PORT, ge=0, le=65535, description="gRPC server port (0 = ephemeral)")
+    allow_ephemeral_port: bool = Field(
+        default=False,
+        description="Accept port=0 (ephemeral); off by default, a Service targeting a fixed port cannot reach one",
+    )
 
     # TLS/SSL settings
     ssl_enabled: bool = Field(default=False, description="Enable TLS/SSL")
@@ -134,6 +138,15 @@ class BaseGrpcServerSettings(BaseModel):
 
     # Health (consumed by GrpcApp.enable_health as its defaults)
     health: BaseHealthSettings = Field(default_factory=BaseHealthSettings, description="Health check configuration")
+
+    @model_validator(mode="after")
+    def _validate_port(self) -> "BaseGrpcServerSettings":
+        if self.port == 0 and not self.allow_ephemeral_port:
+            raise ValueError(
+                "gRPC port=0 binds an ephemeral port and a Service targeting a fixed port will not reach this "
+                "process; set allow_ephemeral_port=True if that is intended"
+            )
+        return self
 
     @model_validator(mode="after")
     def _validate_ssl(self) -> "BaseGrpcServerSettings":
