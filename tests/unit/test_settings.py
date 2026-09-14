@@ -79,12 +79,36 @@ def test__base_grpc_server_settings__invalid_port__raises(invalid_port: int) -> 
         BaseGrpcServerSettings(port=invalid_port)
 
 
-def test__base_grpc_server_settings__port_zero__accepted_as_ephemeral() -> None:
+def test__base_grpc_server_settings__port_zero__rejected_naming_the_flag() -> None:
+    # 0 only ever arrives from configuration, and in a Deployment it is a silent outage.
+    # Act & Assert
+    with pytest.raises(ValidationError, match=r"ephemeral port.*allow_ephemeral_port=True"):
+        BaseGrpcServerSettings(port=0)
+
+
+def test__base_grpc_server_settings__port_zero_with_allow_ephemeral_port__accepted() -> None:
     # Act
-    settings = BaseGrpcServerSettings(port=0)
+    settings = BaseGrpcServerSettings(port=0, allow_ephemeral_port=True)
 
     # Assert
     assert settings.port == 0
+
+
+@pytest.mark.parametrize("allow_ephemeral_port", [False, True])
+def test__base_grpc_server_settings__fixed_port__unaffected_by_allow_ephemeral_port(allow_ephemeral_port: bool) -> None:
+    # Act
+    settings = BaseGrpcServerSettings(port=50051, allow_ephemeral_port=allow_ephemeral_port)
+
+    # Assert
+    assert settings.port == 50051
+
+
+def test__base_grpc_server_settings__port_zero_as_environment_strings__behaves_as_kwargs() -> None:
+    # A BaseSettings with env_nested_delimiter="__" hands the nested model strings: GRPC__PORT=0.
+    # Act & Assert
+    with pytest.raises(ValidationError, match="allow_ephemeral_port=True"):
+        BaseGrpcServerSettings.model_validate({"port": "0"})
+    assert BaseGrpcServerSettings.model_validate({"port": "0", "allow_ephemeral_port": "true"}).port == 0
 
 
 @pytest.mark.parametrize("algorithm", ["none", "deflate", "gzip"])

@@ -21,6 +21,30 @@ config = GrpcServerConfig(
 Invalid configuration fails loudly at construction (dataclass) or validation
 (pydantic) — a misconfigured server must not start.
 
+## Ephemeral ports
+
+`port=0` asks the OS for any free port, which is what a test wants; read the
+result from `GrpcApp.bound_port`. `GrpcServerConfig` accepts it as is. The
+pydantic model is the shape that receives `GRPC__PORT` from the environment,
+and there `0` is one keystroke from a real port and, in a Deployment, a silent
+outage: the process starts, passes its own health check, and is not on the port
+the `Service` sends traffic to. So `BaseGrpcServerSettings` rejects `port=0`
+unless the decision is written down:
+
+```python
+from grpc_server_kit.settings import BaseGrpcServerSettings
+
+BaseGrpcServerSettings(port=0)                             # ValidationError, names the flag
+BaseGrpcServerSettings(port=0, allow_ephemeral_port=True)  # an ephemeral port on purpose
+```
+
+When the port comes from the environment the decision travels with it:
+`GRPC__ALLOW_EPHEMERAL_PORT=true` next to `GRPC__PORT=0`, or a subclass whose
+class default is `allow_ephemeral_port: bool = True`. pydantic-settings builds a
+nested section afresh from its variables, so a default *instance* on the parent
+class (`grpc: BaseGrpcServerSettings = BaseGrpcServerSettings(allow_ephemeral_port=True)`)
+is replaced, not merged, as soon as one `GRPC__*` variable is set.
+
 ## TLS / mTLS
 
 ```python
