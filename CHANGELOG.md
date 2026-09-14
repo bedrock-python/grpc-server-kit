@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/bedrock-python/grpc-server-kit/compare/grpc-server-kit-v0.1.1...grpc-server-kit-v0.2.0) (2026-09-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* `BaseGrpcServerSettings(port=0)` now raises `ValidationError`; pass `allow_ephemeral_port=True` (or `GRPC__ALLOW_EPHEMERAL_PORT=true`) to bind an ephemeral port on purpose.
+
+### Features
+
+* BaseGrpcServerSettings rejects port=0 unless allow_ephemeral_port=True ([4a450e4](https://github.com/bedrock-python/grpc-server-kit/commit/4a450e4dbc7ffe0a7d5fd107e9b2d0e7e2c2d279)), closes [#24](https://github.com/bedrock-python/grpc-server-kit/issues/24)
+
 ## [0.1.1](https://github.com/bedrock-python/grpc-server-kit/compare/grpc-server-kit-v0.1.0...grpc-server-kit-v0.1.1) (2026-09-06)
 
 
