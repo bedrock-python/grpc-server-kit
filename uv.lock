@@ -544,15 +544,15 @@ wheels = [
 
 [[package]]
 name = "grpcio-reflection"
-version = "1.83.1"
+version = "1.84.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "grpcio" },
     { name = "protobuf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/79/86/7a54dbb97ff190462831079d2d7e348bd417d5ffacbe93541511832b85b6/grpcio_reflection-1.83.1.tar.gz", hash = "sha256:c33953f2eae1313ab1d2c2b6a1cec6ddaebe6763da1b2631980792d9792e6233", size = 19204, upload-time = "2026-08-28T07:12:25.277Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6e/8a/94af17ae0738cc4508af96d5f107f352e2b54473eecf32f0ed9bcdd895da/grpcio_reflection-1.84.0.tar.gz", hash = "sha256:06bf3d7d8cef9afbcc721ee52191652b4483831774255e174404b0e0551741bc", size = 19321, upload-time = "2026-09-14T07:10:28.58Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ec/f1/397caeda1b4cfdd6873acf6a1603bc6f8774dfbba107d5fd788bcce18e14/grpcio_reflection-1.83.1-py3-none-any.whl", hash = "sha256:6f80bb2a8f8893545b5a1669fad48518a9e4783f8edd739a300be53e7d1ce0b2", size = 22909, upload-time = "2026-08-28T07:12:14.862Z" },
+    { url = "https://files.pythonhosted.org/packages/47/8b/f07f5aa8ee2b2bd060c0100a581ab68a9b501a927fcf97b1855e40b7bd7c/grpcio_reflection-1.84.0-py3-none-any.whl", hash = "sha256:148b382a1a5621496ede90b12b97c868bb94f7bb8e23b18fc03ed32edd5447cb", size = 22986, upload-time = "2026-09-14T07:10:14.038Z" },
 ]
 
 [[package]]
