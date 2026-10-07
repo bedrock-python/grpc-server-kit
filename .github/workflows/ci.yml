@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -49,12 +49,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       - run: uv sync --group dev --all-extras
       - name: Run integration tests
-        run: |
-          set +e
-          uv run pytest -m integration
-          STATUS=$?
-          set -e
-          test $STATUS -eq 0 -o $STATUS -eq 5
+        run: uv run pytest -m integration
 
   # Sentinel job — use this as the single required status check in branch protection.
   all-checks-passed:
