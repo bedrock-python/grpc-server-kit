@@ -108,10 +108,33 @@ except (asyncio.CancelledError, KeyboardInterrupt, SystemExit):
 except grpc.aio.AbortError:
     raise               # deliberate — the context already carries the real status
 except grpc.RpcError:
-    raise               # already a proper gRPC error
+    raise               # an outbound call failed — see below
 except Exception as exc:
     ...                 # genuinely unexpected — map it, log it, capture it
 ```
+
+A `grpc.RpcError` reaching an interceptor is never a status this RPC chose.
+The only subclass grpcio defines is `grpc.aio.AioRpcError`, which a *client*
+call raises: the handler called another service and that call failed. Its
+`code()` and `details()` belong to the other service. The logging, tracing
+and metrics interceptors read its `code()` when no exception handler sits
+inside them; `AsyncExceptionHandlerInterceptor` does not pass it through, it
+maps it like any other exception. Left alone, `grpc.aio` would answer the
+caller with `UNKNOWN` and the downstream error's `repr` as details.
+
+With the default map that means `INTERNAL` and "Internal server error". The
+downstream status describes this server's call, not the caller's request: a
+downstream `INVALID_ARGUMENT` or `UNAUTHENTICATED` means this server sent a
+bad request or holds bad credentials. To report every failed outbound call
+with another status, map `grpc.RpcError` like any exception type:
+
+```python
+AsyncExceptionHandlerInterceptor({grpc.RpcError: grpc.StatusCode.UNAVAILABLE})
+```
+
+To forward a particular downstream status (say, a `NOT_FOUND` that really is
+the caller's), catch the `AioRpcError` in the handler and `context.abort()`
+with the status you mean.
 
 ## The canonical chain
 

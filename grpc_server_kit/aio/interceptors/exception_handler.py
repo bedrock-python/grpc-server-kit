@@ -97,12 +97,18 @@ class AsyncExceptionHandlerInterceptor(AsyncServerInterceptor):
     """Interceptor that catches exceptions and converts them to gRPC errors.
 
     Rules:
-    - ``grpc.aio.AbortError`` (the handler already aborted with its own status) and
-      ``grpc.RpcError`` are re-raised as-is.
+    - ``grpc.aio.AbortError`` (the handler already aborted with its own status) is
+      re-raised as-is.
     - ``CancelledError`` / ``KeyboardInterrupt`` / ``SystemExit`` are re-raised.
     - Any other exception is mapped to a ``grpc.StatusCode`` (via the MRO) and the request
       is aborted with details from the ``detail_factory``. Unmapped exceptions default to
       ``INTERNAL`` with a safe message (no internal details leaked).
+
+    A ``grpc.RpcError`` raised by an outbound call the handler made (``grpc.aio.AioRpcError``)
+    is one of those "other" exceptions: its status and details belong to the downstream
+    service, so it is mapped like anything else (``INTERNAL`` by default) instead of reaching
+    the caller as ``UNKNOWN`` with the downstream details. Map ``grpc.RpcError`` in
+    ``error_status_map`` to report downstream failures with another status.
 
     Covers streaming RPCs: exceptions raised while producing a response stream are
     mapped and aborted the same way as unary failures.
@@ -141,8 +147,6 @@ class AsyncExceptionHandlerInterceptor(AsyncServerInterceptor):
         except grpc.aio.AbortError:
             # The handler (or an inner interceptor) already aborted this RPC with
             # its own status — pass it through untouched.
-            raise
-        except grpc.RpcError:
             raise
         except Exception as exc:
             await self._abort_with_mapped_status(exc, call)

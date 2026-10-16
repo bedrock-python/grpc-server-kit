@@ -8,7 +8,10 @@ from dataclasses import dataclass
 import grpc
 import pytest
 
-from .conftest import SERVICE, RunningServer
+from grpc_server_kit import GrpcApp
+from grpc_server_kit.aio.interceptors import AsyncExceptionHandlerInterceptor, AsyncMetricsInterceptor
+
+from .conftest import SERVICE, RecordingMetrics, RunningServer
 
 pytestmark = pytest.mark.integration
 
@@ -152,3 +155,50 @@ async def test__interceptor_chain__unary_stream_error_mid_stream__maps_status_af
     record = running_server.metrics.for_method(f"/{SERVICE}/StreamFailMid")
     assert record["status"] == "error"
     assert record["grpc_code"] == "INVALID_ARGUMENT"
+
+
+async def test__interceptor_chain__outbound_call_fails__caller_gets_internal_not_downstream_status(
+    running_server: RunningServer,
+) -> None:
+    # Arrange
+    # A second service whose handler calls running_server, which aborts with
+    # PERMISSION_DENIED / "handler-abort". That status describes this service's
+    # call, not its caller's request, so it must not reach the caller.
+    proxy_service = "test.Proxy"
+
+    async def call_downstream(request: bytes, _context: grpc.aio.ServicerContext[bytes, bytes]) -> bytes:
+        async with grpc.aio.insecure_channel(running_server.target()) as downstream:
+            response: bytes = await downstream.unary_unary(f"/{SERVICE}/AbortDirectly")(request, timeout=5)
+            return response
+
+    metrics = RecordingMetrics()
+    proxy = GrpcApp(
+        host="127.0.0.1",
+        port=0,
+        interceptors=[
+            AsyncMetricsInterceptor(metrics=metrics, service_name=proxy_service),
+            AsyncExceptionHandlerInterceptor(),
+        ],
+    )
+    proxy.register(
+        lambda raw: raw.add_generic_rpc_handlers(
+            (
+                grpc.method_handlers_generic_handler(
+                    proxy_service, {"CallDownstream": grpc.unary_unary_rpc_method_handler(call_downstream)}
+                ),
+            )
+        )
+    )
+
+    # Act
+    async with proxy, grpc.aio.insecure_channel(f"127.0.0.1:{proxy.bound_port}") as channel:
+        with pytest.raises(grpc.aio.AioRpcError) as exc_info:
+            await channel.unary_unary(f"/{proxy_service}/CallDownstream")(b"x", timeout=5)
+
+    # Assert
+    assert exc_info.value.code() == grpc.StatusCode.INTERNAL
+    assert exc_info.value.details() == "Internal server error"
+
+    record = metrics.for_method(f"/{proxy_service}/CallDownstream")
+    assert record["status"] == "error"
+    assert record["grpc_code"] == "INTERNAL"
