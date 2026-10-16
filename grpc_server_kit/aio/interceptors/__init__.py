@@ -10,8 +10,12 @@ Canonical execution order (outermost first):
 2. ``AsyncContextInterceptor``            (extract metadata into context vars)
 3. ``AsyncRequestLoggerInterceptor``      (request/response logging)
 4. ``AsyncTracingInterceptor``            (tracing span)
-5. ``AsyncSentryInterceptor``             (error tracking)
-6. ``AsyncExceptionHandlerInterceptor``   (exception → gRPC status mapping)
+5. ``AsyncExceptionHandlerInterceptor``   (exception → gRPC status mapping)
+6. ``AsyncSentryInterceptor``             (error tracking)
+
+Sentry sits inside the exception handler so it sees the original exception;
+outside, it would only see the ``grpc.aio.AbortError`` the handler turned it
+into, and it never captures those.
 """
 
 from .base import AsyncServerInterceptor, RpcCall, split_method_name

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import AsyncIterator, Awaitable, Callable
 from unittest.mock import MagicMock, patch
 
@@ -10,6 +11,7 @@ import pytest
 from dishka import AsyncContainer, Provider, make_async_container
 from dishka.integrations.grpcio import DishkaAioInterceptor
 
+from grpc_server_kit.aio import interceptors as interceptors_module
 from grpc_server_kit.aio.dishka import (
     AsyncGrpcServerProvider,
     GrpcServerInterceptorsProvider,
@@ -103,6 +105,22 @@ async def test__grpc_server_providers__default_bundle__wires_service_name_chain_
 
     assert isinstance(server, AsyncServer)
     assert server.raw_server is not None
+
+
+async def test__grpc_server_providers__default_bundle__matches_order_documented_in_interceptors_module(
+    container_factory: ContainerFactory,
+    make_settings: Callable[..., BaseGrpcServerSettings],
+) -> None:
+    # Arrange
+    container = await container_factory(*grpc_server_providers(make_settings(), service_name=SERVICE))
+    documented = re.findall(r"^\d+\. ``(\w+)``", interceptors_module.__doc__ or "", flags=re.MULTILINE)
+
+    # Act
+    chain = await container.get(INTERCEPTORS_KEY)
+
+    # Assert
+    # The module docstring is the order users copy by hand; it must not drift from the provider.
+    assert documented == [type(i).__name__ for i in chain if not isinstance(i, DishkaAioInterceptor)]
 
 
 async def test__grpc_server_interceptors_provider__sentry_and_tracing_disabled__drops_them_from_chain(
