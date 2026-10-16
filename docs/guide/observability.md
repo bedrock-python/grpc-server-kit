@@ -105,7 +105,9 @@ process-global SDK state: without a fresh scope per RPC, tags and breadcrumbs
 from concurrent calls would bleed into each other's error reports.
 
 It only captures raw `Exception`s that reach it — `grpc.aio.AbortError` and
-`grpc.RpcError` are re-raised untouched, never captured. Combined with the
+`grpc.RpcError` are re-raised untouched, never captured. A `grpc.RpcError`
+here is a failed outbound call; the exception handler logs it at `ERROR` with
+its traceback and answers the caller with a masked status. Combined with the
 [canonical chain order](interceptors.md#the-canonical-chain), this is why
 Sentry's position matters: placed inside (closer to the handler than)
 `AsyncExceptionHandlerInterceptor`, it sees the exact exception the handler

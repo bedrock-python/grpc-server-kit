@@ -356,7 +356,11 @@ The kit's defaults live in `grpc_server_kit.constants` as `DEFAULT_*` names, alo
 4. **`context.abort()` raises `grpc.aio.AbortError`, which is not a `grpc.RpcError`.**
    `except grpc.RpcError:` does not catch a deliberate abort; `except Exception:` does.
    An interceptor that logs and re-raises everything will fire on every intentional
-   abort unless it filters `AbortError` out first.
+   abort unless it filters `AbortError` out first. The reverse holds too: a
+   `grpc.RpcError` in a server interceptor is a failed *outbound* call, not a status this
+   RPC chose. `AsyncExceptionHandlerInterceptor` maps it to `INTERNAL` (or whatever
+   `grpc.RpcError` maps to in your `error_status_map`); re-raising it untouched sends the
+   caller `UNKNOWN` with the downstream error's details.
 5. **`around_call` is an async generator, not a coroutine.** It must contain exactly one
    `yield`; the RPC — including the complete consumption of a response stream — happens
    there. A body with no `yield` anywhere is a plain coroutine, and every RPC through
@@ -485,9 +489,7 @@ except (asyncio.CancelledError, KeyboardInterrupt, SystemExit):
     raise
 except grpc.aio.AbortError:
     raise                           # deliberate; the context carries the real status
-except grpc.RpcError:
-    raise
-except Exception:
+except Exception:                   # includes a failed outbound call (grpc.RpcError)
     metrics.failure()
     raise
 ```
@@ -547,7 +549,7 @@ builder.with_servicers(register)
 | `PermissionError` | A private key readable beyond its owner, or a TLS file that cannot be read |
 | `OSError` | Any other I/O failure reading a TLS file |
 | `grpc.aio.AbortError` | Raised by `context.abort()` — by your handler, by `AsyncExceptionHandlerInterceptor`, by `AsyncContextInterceptor` on a missing required header, or by the health servicer aborting a broken `Watch` |
-| `grpc.RpcError` | gRPC's own transport-level errors, passed through untouched |
+| `grpc.RpcError` | Raised by a *client* call (`grpc.aio.AioRpcError`) when another service fails. One that escapes your handler is mapped by `AsyncExceptionHandlerInterceptor` like any other exception — `INTERNAL` by default, never the downstream status or details |
 
 Pydantic's `ValidationError` replaces `ValueError` when the settings object is a
 `BaseGrpcServerSettings`.

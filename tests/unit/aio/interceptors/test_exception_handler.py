@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from unittest.mock import MagicMock
 
 import grpc
 import pytest
-from pytest_lazy_fixtures import lf
 
 from grpc_server_kit.aio.interceptors.exception_handler import (
     GRPC_SAFE_ERROR_MESSAGES,
@@ -15,15 +15,9 @@ from grpc_server_kit.aio.interceptors.exception_handler import (
     default_error_detail,
 )
 
-from .conftest import RESPONSE, FailingMethodFactory, MakeContext, MakeRpcError, OkMethod, RunUnary
+from .conftest import RESPONSE, FailingMethodFactory, MakeContext, OkMethod, RunUnary
 
 pytestmark = pytest.mark.unit
-
-
-@pytest.fixture
-def rpc_error(make_rpc_error: MakeRpcError) -> grpc.RpcError:
-    """A bare RpcError, e.g. one surfaced by an upstream call — not this interceptor's concern."""
-    return make_rpc_error()
 
 
 async def test__exception_handler__no_exception__returns_response(
@@ -44,7 +38,6 @@ async def test__exception_handler__no_exception__returns_response(
 @pytest.mark.parametrize(
     "exc",
     [
-        pytest.param(lf("rpc_error"), id="rpc_error"),
         # The handler already aborted with its own status: no re-mapping, no second abort.
         pytest.param(grpc.aio.AbortError(), id="abort_error"),
         pytest.param(asyncio.CancelledError(), id="cancelled"),
@@ -92,6 +85,60 @@ async def test__exception_handler__default_map__aborts_with_mapped_status(
         await run_unary(interceptor, failing_method(exc), MagicMock(), ctx)
     assert ctx.abort.call_args.args[0] == expected_status
     assert ctx.abort.call_args.args[1] == GRPC_SAFE_ERROR_MESSAGES[expected_status]
+
+
+def _outbound_rpc_error(code: grpc.StatusCode, details: str) -> grpc.aio.AioRpcError:
+    """The error an outbound call made by the handler raises when the other service fails."""
+    return grpc.aio.AioRpcError(code, grpc.aio.Metadata(), grpc.aio.Metadata(), details=details)
+
+
+@pytest.mark.parametrize(
+    "downstream_code",
+    [
+        pytest.param(grpc.StatusCode.INTERNAL, id="downstream_internal"),
+        # The downstream status describes this server's call, not the caller's request:
+        # forwarding PERMISSION_DENIED would blame the caller for this server's credentials.
+        pytest.param(grpc.StatusCode.PERMISSION_DENIED, id="downstream_permission_denied"),
+    ],
+)
+async def test__exception_handler__outbound_rpc_error__aborts_internal_without_downstream_details(
+    make_context: MakeContext,
+    failing_method: FailingMethodFactory,
+    run_unary: RunUnary,
+    caplog: pytest.LogCaptureFixture,
+    downstream_code: grpc.StatusCode,
+) -> None:
+    # Arrange
+    interceptor = AsyncExceptionHandlerInterceptor()
+    ctx = make_context()
+    error = _outbound_rpc_error(downstream_code, "ledger dsn=postgres://ledger:s3cret@10.0.3.7/ledger")
+
+    # Act
+    with caplog.at_level(logging.ERROR), pytest.raises(grpc.aio.AbortError):
+        await run_unary(interceptor, failing_method(error), MagicMock(), ctx)
+
+    # Assert
+    ctx.abort.assert_awaited_once_with(grpc.StatusCode.INTERNAL, "Internal server error")
+    # The real failure goes to the log with its traceback, as for any other server error.
+    (record,) = caplog.records
+    assert record.exc_info is not None
+    assert record.exc_info[1] is error
+
+
+async def test__exception_handler__rpc_error_in_status_map__aborts_with_mapped_status(
+    make_context: MakeContext,
+    failing_method: FailingMethodFactory,
+    run_unary: RunUnary,
+) -> None:
+    # Arrange
+    interceptor = AsyncExceptionHandlerInterceptor({grpc.RpcError: grpc.StatusCode.UNAVAILABLE})
+    ctx = make_context()
+    error = _outbound_rpc_error(grpc.StatusCode.UNAVAILABLE, "connection refused")
+
+    # Act & Assert
+    with pytest.raises(grpc.aio.AbortError):
+        await run_unary(interceptor, failing_method(error), MagicMock(), ctx)
+    ctx.abort.assert_awaited_once_with(grpc.StatusCode.UNAVAILABLE, "Service unavailable")
 
 
 async def test__exception_handler__custom_status_map__overrides_default_mapping(
