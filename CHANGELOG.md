@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/bedrock-python/grpc-server-kit/compare/grpc-server-kit-v0.2.0...grpc-server-kit-v0.2.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* map a failed outbound RPC instead of passing its status to the caller ([#50](https://github.com/bedrock-python/grpc-server-kit/issues/50)) ([232b190](https://github.com/bedrock-python/grpc-server-kit/commit/232b19076a083774dc52fbf01f1cc7809de04a98)), closes [#48](https://github.com/bedrock-python/grpc-server-kit/issues/48)
+
 ## [0.2.0](https://github.com/bedrock-python/grpc-server-kit/compare/grpc-server-kit-v0.1.1...grpc-server-kit-v0.2.0) (2026-09-14)
 
 
