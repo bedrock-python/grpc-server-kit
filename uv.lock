@@ -509,15 +509,15 @@ wheels = [
 
 [[package]]
 name = "grpcio-channelz"
-version = "1.85.1"
+version = "1.85.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "grpcio" },
     { name = "protobuf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/ce/9066e3d5868c2088b6f800f01b1b3ed9c0d0dff39dfffedcffd38e9c6660/grpcio_channelz-1.85.1.tar.gz", hash = "sha256:bab93349a820e714c6b827e374bb10896dbf6acfa45df6b6ccfa9af13301e4da", size = 22809, upload-time = "2026-10-30T16:05:17.53Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/ab/95adbe591cb4d8fdab48688e1f3f5f01529349008afb712ea51133d967e2/grpcio_channelz-1.85.3.tar.gz", hash = "sha256:6455f89056b250884500fe07f5e8d177b9e1e54841bae16278b60c03845b707d", size = 22812, upload-time = "2026-11-18T04:33:19.464Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/62/a237034ef4f791ac0e782ab5de67552586740ef184a1658dd762dd698fca/grpcio_channelz-1.85.1-py3-none-any.whl", hash = "sha256:80dde50e0d3625ced948e364ddfd88c11dbcbc49f438cd4f28ac0b0cb8160ab7", size = 24541, upload-time = "2026-10-30T16:03:49.098Z" },
+    { url = "https://files.pythonhosted.org/packages/00/5a/3362246fb5d0f249bca2e584454e32680910257c85479d30ff19f205e789/grpcio_channelz-1.85.3-py3-none-any.whl", hash = "sha256:3fc97481335b334ade489bb3631b1b5afd77e5e920d06b2c2e85af6b8a83a3df", size = 24542, upload-time = "2026-11-18T04:32:08.984Z" },
 ]
 
 [[package]]
